@@ -1,5 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
-
+buildscript {
+    repositories {
+        maven("https://maven.aliyun.com/repository/gradle-plugin")
+    }
+}
 plugins {
     kotlin("jvm") version "1.9.10"
     kotlin("plugin.serialization") version "1.9.10"
@@ -14,6 +18,7 @@ group = "org.snd"
 version = "1.0-SNAPSHOT"
 
 repositories {
+    maven("https://maven.aliyun.com/repository/public")
     mavenCentral()
 }
 

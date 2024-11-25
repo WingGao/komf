@@ -54,9 +54,9 @@ class BangumiMetadataProvider(
 
     override suspend fun searchSeries(seriesName: String, limit: Int): Collection<SeriesSearchResult> {
         return client.searchSeries(seriesName).data.asSequence()
-            .sortedWith(subjectRank())
-            .filter { it.tags.none { tag -> tag.name == "漫画单行本" } }
-            .take(limit)
+//            .sortedWith(subjectRank()) //默认排序
+//            .filter { it.tags.none { tag -> tag.name == "漫画单行本" } }
+//            .take(10)
             .map {
                 metadataMapper.toSearchResult(it)
             }.toList()

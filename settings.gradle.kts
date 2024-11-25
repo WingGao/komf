@@ -2,15 +2,18 @@ rootProject.name = "komf"
 
 pluginManagement {
     repositories {
-        google()
         gradlePluginPortal()
+//        maven("https://maven.aliyun.com/repository/gradle-plugin")
+        google()
         mavenCentral()
     }
 }
 @Suppress("UnstableApiUsage")
 dependencyResolutionManagement {
     repositories {
+        mavenLocal()
         google()
+//        maven("https://maven.aliyun.com/repository/public/")
         mavenCentral()
         maven("https://maven.pkg.jetbrains.space/public/p/ktor/eap")
         maven("https://oss.sonatype.org/content/repositories/snapshots/")

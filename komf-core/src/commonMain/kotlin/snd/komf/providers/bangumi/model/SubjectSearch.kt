@@ -14,7 +14,7 @@ data class SearchSubjectsResponse(
 @Serializable
 data class SubjectSearchData(
     val id: Long,
-    val date: String,
+    val date: String?,
     val image: String,
     val summary: String?,
     val name: String,
@@ -22,7 +22,7 @@ data class SubjectSearchData(
     @SerialName("name_cn")
     val nameCn: String,
     val tags: List<SubjectTag>,
-    val score: Double,
-    val rank: Int,
+    val score: Double?=null,
+    val rank: Int?=null,
     val type: SubjectType? = null
 )

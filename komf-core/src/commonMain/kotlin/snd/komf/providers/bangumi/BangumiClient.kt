@@ -27,10 +27,8 @@ class BangumiClient(
 
     suspend fun searchSeries(
         keyword: String,
-        rating: Collection<String> = listOf(">0.0"), // Use min rating to improve result quality
-        rank: Collection<String> = listOf(">=0"), // Use ranked items to improve result quality
     ): SearchSubjectsResponse {
-        val rep1 =  searchSeries1(keyword,rating,rank)
+        val rep1 =  searchSeries1(keyword)
         val rep1Items = rep1.data.toMutableList()
         val rep1Ids = rep1Items.map { it.id }.toSet()
         searchSeries2(keyword).data.forEachIndexed { index, subjectSearchData ->
@@ -43,9 +41,7 @@ class BangumiClient(
     }
 
     suspend fun searchSeries1(
-        keyword: String,
-        rating: Collection<String> = listOf(">0.0"), // Use min rating to improve result quality
-        rank: Collection<String> = listOf(">=0"), // Use ranked items to improve result quality
+        keyword: String
     ): SearchSubjectsResponse {
         return ktor.post("$apiV0Url/search/subjects?limit=15") {
             contentType(ContentType.Application.Json)
@@ -54,8 +50,6 @@ class BangumiClient(
                     put("keyword", keyword)
                     put("filter", buildJsonObject {
                         putJsonArray("type") { add(SubjectType.BOOK.value) }
-//                        putJsonArray("rating") { rating.forEach { add(it) } }
-//                        putJsonArray("rank") { rank.forEach { add(it) } }
                         put("nsfw", true) // include NSFW content
                     })
                 }
@@ -110,7 +104,7 @@ class BangumiClient(
     }
 
     suspend fun getThumbnail(subject: BangumiSubject): Image? {
-        return (subject.images.common ?: subject.images.medium)?.let {
+        return (subject.images.common ?: subject.images.medium)?.ifBlank { null }?.let {
             val bytes: ByteArray = ktor.get(it) {
             }.body()
             Image(bytes)

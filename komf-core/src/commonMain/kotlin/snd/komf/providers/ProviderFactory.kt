@@ -111,9 +111,9 @@ class ProviderFactory(providedHttpClient: HttpClient?) {
         install(ContentNegotiation) { json(json) }
     }
 
-    private val malRateLimiter = rateLimiter(60, 60.seconds)
     private val comicVineRateLimiter = ComicVineRateLimiter()
-    private val bangumiRateLimiter = intervalLimiter(80, 60.seconds)
+    private val malRateLimiter = rateLimiter(eventsPerInterval = 10, interval = 10.seconds)
+    private val bangumiRateLimiter = intervalLimiter(eventsPerInterval = 10, interval = 7.seconds)
 
     private fun HttpRequestRetryConfig.defaultRetry() {
         retryIf(3) { _, response ->
@@ -124,18 +124,18 @@ class ProviderFactory(providedHttpClient: HttpClient?) {
                 else -> false
             }
         }
+        exponentialDelay(baseDelayMs = 2000, respectRetryAfterHeader = true)
     }
 
     private val mangaUpdatesClient = MangaUpdatesClient(
         baseHttpClientJson.config {
             install(HttpRequestRateLimiter) {
-                eventsPerInterval = 90
-                interval = 60.seconds
+                interval = 10.seconds
+                eventsPerInterval = 15
                 allowBurst = true
             }
             install(HttpRequestRetry) {
                 defaultRetry()
-                exponentialDelay(respectRetryAfterHeader = true)
             }
         }
     )
@@ -143,13 +143,12 @@ class ProviderFactory(providedHttpClient: HttpClient?) {
     private val nautiljonClient = NautiljonClient(
         baseHttpClient.config {
             install(HttpRequestRateLimiter) {
-                interval = 60.seconds
-                eventsPerInterval = 60
+                interval = 10.seconds
+                eventsPerInterval = 10
                 allowBurst = false
             }
             install(HttpRequestRetry) {
                 defaultRetry()
-                exponentialDelay(respectRetryAfterHeader = true)
             }
         }
     )
@@ -157,65 +156,60 @@ class ProviderFactory(providedHttpClient: HttpClient?) {
     private val aniListClient = AniListClient(
         baseHttpClientJson.config {
             install(HttpRequestRateLimiter) {
-                interval = 60.seconds
-                eventsPerInterval = 80
+                interval = 10.seconds
+                eventsPerInterval = 15
                 allowBurst = true
             }
             install(HttpRequestRetry) {
                 defaultRetry()
-                exponentialDelay(respectRetryAfterHeader = true)
             }
         }
     )
     private val yenPressClient = YenPressClient(
         baseHttpClientJson.config {
             install(HttpRequestRateLimiter) {
-                interval = 60.seconds
-                eventsPerInterval = 60
+                interval = 10.seconds
+                eventsPerInterval = 10
                 allowBurst = true
             }
             install(HttpRequestRetry) {
                 defaultRetry()
-                exponentialDelay(respectRetryAfterHeader = true)
             }
         }
     )
     private val kodanshaClient = KodanshaClient(
         baseHttpClientJson.config {
             install(HttpRequestRateLimiter) {
-                interval = 60.seconds
-                eventsPerInterval = 60
+                interval = 10.seconds
+                eventsPerInterval = 10
                 allowBurst = true
             }
             install(HttpRequestRetry) {
                 defaultRetry()
-                exponentialDelay(respectRetryAfterHeader = true)
             }
         }
     )
     private val vizClient = VizClient(
         baseHttpClient.config {
             install(HttpRequestRateLimiter) {
-                interval = 60.seconds
-                eventsPerInterval = 40
+                interval = 10.seconds
+                eventsPerInterval = 5
                 allowBurst = false
             }
             install(HttpRequestRetry) {
                 defaultRetry()
-                exponentialDelay(respectRetryAfterHeader = true)
             }
         }
     )
     private val bookWalkerClient = BookWalkerClient(
         baseHttpClient.config {
             install(HttpRequestRateLimiter) {
-                interval = 60.seconds
-                eventsPerInterval = 60
+                interval = 10.seconds
+                eventsPerInterval = 10
                 allowBurst = true
             }
             install(HttpRequestRetry) {
                 defaultRetry()
-                exponentialDelay(respectRetryAfterHeader = true)
             }
 
             defaultRequest {
@@ -227,13 +221,12 @@ class ProviderFactory(providedHttpClient: HttpClient?) {
     private val mangaDexClient = MangaDexClient(
         baseHttpClientJson.config {
             install(HttpRequestRateLimiter) {
-                interval = 60.seconds
-                eventsPerInterval = 90
+                interval = 10.seconds
+                eventsPerInterval = 15
                 allowBurst = true
             }
             install(HttpRequestRetry) {
                 defaultRetry()
-                exponentialDelay(respectRetryAfterHeader = true)
             }
         }
     )
@@ -241,13 +234,12 @@ class ProviderFactory(providedHttpClient: HttpClient?) {
     private val hentagClient = HentagClient(
         baseHttpClientJson.config {
             install(HttpRequestRateLimiter) {
-                interval = 60.seconds
-                eventsPerInterval = 60
-                allowBurst = true
+                interval = 10.seconds
+                eventsPerInterval = 10
+                allowBurst = false
             }
             install(HttpRequestRetry) {
                 defaultRetry()
-                exponentialDelay(respectRetryAfterHeader = true)
             }
         }
     )
@@ -582,7 +574,6 @@ class ProviderFactory(providedHttpClient: HttpClient?) {
                 }
                 install(HttpRequestRetry) {
                     defaultRetry()
-                    exponentialDelay(respectRetryAfterHeader = true)
                 }
 
                 if (!token.isNullOrBlank()) defaultRequest { bearerAuth(token) }

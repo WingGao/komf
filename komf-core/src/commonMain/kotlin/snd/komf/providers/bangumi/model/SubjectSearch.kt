@@ -14,15 +14,13 @@ data class SearchSubjectsResponse(
 @Serializable
 data class SubjectSearchData(
     val id: Long,
-    val date: String?,
-    val image: String,
-    val summary: String?,
+    val image: String? = null,
+    val summary: String? = null,
     val name: String,
 
     @SerialName("name_cn")
-    val nameCn: String,
-    val tags: List<SubjectTag>,
-    val score: Double?=null,
-    val rank: Int?=null,
+    val nameCn: String? = null,
+    val tags: List<SubjectTag> = emptyList(),
+    val rating: SubjectRating? = null,
     val type: SubjectType? = null
 )

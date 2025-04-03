@@ -87,7 +87,7 @@ class BangumiClient(
     ): SearchSubjectsResponse {
         return ktor.get("https://api.bgm.tv/search/subject/${URLEncoder.encode(keyword)}?type=1&responseGroup=large").body<Rep2>().let {rep->
             SearchSubjectsResponse(total = rep.results, data = rep.list.map {
-                SubjectSearchData(id = it.id, date = it.airDate, image = it.images!!.common, summary = it.summary,
+                SubjectSearchData(id = it.id, image = it.images?.common, summary = it.summary,
                     name = it.name, nameCn = it.nameCn, tags = emptyList(), type = SubjectType.fromValue(it.type!!))
             })
         }

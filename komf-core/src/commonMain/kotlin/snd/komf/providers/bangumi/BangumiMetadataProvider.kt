@@ -64,7 +64,6 @@ class BangumiMetadataProvider(
     override suspend fun matchSeriesMetadata(matchQuery: MatchQuery): ProviderSeriesMetadata? {
         val searchResults = client.searchSeries(matchQuery.seriesName)
         val matches = searchResults.data.asSequence()
-            .sortedWith(subjectRank())
             .filter { it.tags.none { tag -> tag.name == "漫画单行本" } }
             .filter { nameMatcher.matches(matchQuery.seriesName, listOfNotNull(it.nameCn, it.name)) }
             .toList()
@@ -100,14 +99,5 @@ class BangumiMetadataProvider(
             if (subject.platform == matchPlatform) return subject
         }
         return null
-    }
-
-    private fun subjectRank() = Comparator<SubjectSearchData> { a, b ->
-        when {
-            a.rank == b.rank -> 0
-            a.rank == 0 -> 1
-            b.rank == 0 -> -1
-            else -> compareValues(a.rank, b.rank)
-        }
     }
 }

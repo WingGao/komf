@@ -46,3 +46,11 @@ bin/
 
 database.sqlite
 application.yml
+
+
+### kotlin ###
+kls_database.db
+kls-classpath*
+
+### neovim ###
+.nvim.lua

@@ -32,9 +32,8 @@ class ConfigLoader(private val yaml: Yaml) {
     }
 
     private fun postProcessConfig(config: AppConfig, configDirectory: Path?): AppConfig {
-        val processedConfig = overrideDeprecatedOptions(
-            overrideConfigDirAndEnvVars(config, configDirectory?.toString())
-        )
+        val processedConfig = overrideConfigDirAndEnvVars(config, configDirectory?.toString())
+
         warnAboutDisabledProviders(processedConfig)
         return processedConfig
     }
@@ -46,6 +45,8 @@ class ConfigLoader(private val yaml: Yaml) {
         val appriseConfig = config.notifications.apprise
         val discordConfig = config.notifications.discord
         val templatesDirectory = configDirectory ?: notificationConfig.templatesDirectory
+        val mangaBakaDirectory = configDirectory?.let { "$it/mangabaka" }
+            ?: config.metadataProviders.mangabakaDatabaseDir
 
         val appriseUrls = System.getenv("KOMF_APPRISE_URLS")?.ifBlank { null }
             ?.split(",")?.toList()
@@ -68,11 +69,13 @@ class ConfigLoader(private val yaml: Yaml) {
         val logLevel = System.getenv("KOMF_LOG_LEVEL")?.ifBlank { null } ?: config.logLevel
 
         val metadataProvidersConfig = config.metadataProviders
-        val malClientId = System.getenv("KOMF_METADATA_PROVIDERS_MAL_CLIENT_ID")?.ifBlank { null }?.toString()
+        val malClientId = System.getenv("KOMF_METADATA_PROVIDERS_MAL_CLIENT_ID")?.ifBlank { null }
             ?: metadataProvidersConfig.malClientId
-        val comicVineApiKey = System.getenv("KOMF_METADATA_PROVIDERS_COMIC_VINE_API_KEY")?.ifBlank { null }?.toString()
+        val comicVineApiKey = System.getenv("KOMF_METADATA_PROVIDERS_COMIC_VINE_API_KEY")?.ifBlank { null }
             ?: metadataProvidersConfig.comicVineApiKey
-        val bangumiToken = System.getenv("KOMF_METADATA_PROVIDERS_BANGUMI_TOKEN")?.ifBlank { null }?.toString()
+        val comicVineSearchLimit = System.getenv("KOMF_METADATA_PROVIDERS_COMIC_VINE_SEARCH_LIMIT")?.ifBlank { null }
+            ?: metadataProvidersConfig.comicVineSearchLimit
+        val bangumiToken = System.getenv("KOMF_METADATA_PROVIDERS_BANGUMI_TOKEN")?.ifBlank { null }
             ?: metadataProvidersConfig.bangumiToken
 
         return config.copy(
@@ -92,7 +95,8 @@ class ConfigLoader(private val yaml: Yaml) {
             metadataProviders = metadataProvidersConfig.copy(
                 malClientId = malClientId,
                 comicVineApiKey = comicVineApiKey,
-                bangumiToken = bangumiToken
+                bangumiToken = bangumiToken,
+                mangabakaDatabaseDir = mangaBakaDirectory
             ),
             notifications = config.notifications.copy(
                 templatesDirectory = templatesDirectory,
@@ -105,42 +109,6 @@ class ConfigLoader(private val yaml: Yaml) {
             ),
             server = serverConfig.copy(port = serverPort),
             logLevel = logLevel
-        )
-    }
-
-    @Suppress("DEPRECATION")
-    private fun overrideDeprecatedOptions(config: AppConfig): AppConfig {
-        return config.copy(
-            notifications = config.notifications.copy(
-                discord = config.discord ?: config.notifications.discord
-            ),
-            discord = null,
-
-            komga = config.komga.copy(
-                eventListener = config.komga.eventListener.copy(
-                    notificationsLibraryFilter = config.komga.notifications.libraries
-                        ?: config.komga.eventListener.notificationsLibraryFilter,
-                    metadataLibraryFilter = config.komga.eventListener.libraries
-                        ?: config.komga.eventListener.metadataLibraryFilter,
-                    metadataSeriesExcludeFilter = config.komga.eventListener.excludeSeries
-                        ?: config.komga.eventListener.metadataSeriesExcludeFilter,
-                    libraries = null,
-                    excludeSeries = null,
-                )
-            ),
-
-            kavita = config.kavita.copy(
-                eventListener = config.kavita.eventListener.copy(
-                    notificationsLibraryFilter = config.kavita.notifications.libraries
-                        ?: config.kavita.eventListener.notificationsLibraryFilter,
-                    metadataLibraryFilter = config.kavita.eventListener.libraries
-                        ?: config.kavita.eventListener.metadataLibraryFilter,
-                    metadataSeriesExcludeFilter = config.kavita.eventListener.excludeSeries
-                        ?: config.kavita.eventListener.metadataSeriesExcludeFilter,
-                    libraries = null,
-                    excludeSeries = null,
-                )
-            )
         )
     }
 
@@ -157,6 +125,9 @@ class ConfigLoader(private val yaml: Yaml) {
             config.metadataProviders.defaultProviders.mangaDex.enabled.not() &&
             config.metadataProviders.defaultProviders.bangumi.enabled.not() &&
             config.metadataProviders.defaultProviders.comicVine.enabled.not() &&
+            config.metadataProviders.defaultProviders.hentag.enabled.not() &&
+            config.metadataProviders.defaultProviders.mangaBaka.enabled.not() &&
+            config.metadataProviders.defaultProviders.webtoons.enabled.not() &&
             config.metadataProviders.libraryProviders.isEmpty()
         ) {
             logger.warn { "No metadata providers enabled. You will not be able to get new metadata" }

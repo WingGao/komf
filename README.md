@@ -1,18 +1,18 @@
 # Komga and Kavita Metadata Fetcher
+Download latest version from https://github.com/Snd-R/komf/releases
 
 ## Overview
+Komga and Kavita Metadata Fetcher is a tool that fetches metadata and thumbnails for your digital comic book library.\
+It
+can automatically pick up added series and update their metadata and thumbnail.\
+You can also manually search and
+identify series, or match the entire library or a series.
 
-Komga and Kavita Metadata Fetcher is a tool that fetches metadata and thumbnails for your digital comic book library. It
-can automatically pick up added series and update their metadata and thumbnail. You can also manually search and
-identify series, or match the entire library or a series. Additionally, you can install
-the [Komf userscript](https://github.com/Snd-R/komf-userscript) to add Komf integration directly to Komga and Kavita UI,
-allowing you to launch manual or automatic metadata identification.
-
-## Features
-
-- automatically pick up added series and update their metadata and thumbnail
-- manually search and identify series (http endpoints or cli commands)
-- match entire library or a series (http endpoints or cli commands)
+### Komga and Kavita webui integration
+Browser web extension will let configure komf and identify series directly from komga or kavita webui
+- [Chrome download]( https://chromewebstore.google.com/detail/komf/bhppjldobkpocplgfcimljjhdjgbpdnh)
+- [Firefox download](https://addons.mozilla.org/en-US/firefox/addon/komf/)
+- deprecated [Komf userscript](https://github.com/Snd-R/komf-userscript) is still functional, but it will not receive new updates
 
 ## Building
 
@@ -86,13 +86,6 @@ docker create \
 
 ## Example `application.yml` Config
 
-### Important
-
-- Update modes is the way komf will update metadata.
-- If you're using anything other than API then your existing files might be modified with embedded metadata
-- Can use multiple options at once. available options are API, COMIC_INFO
-- Experimental OPF mode is available for epub books. This mode is using calibre system install to update metadate
-
 ```yml
 komga:
   baseUri: http://localhost:25600 #or env:KOMF_KOMGA_BASE_URI
@@ -105,7 +98,7 @@ komga:
     notificationsLibraryFilter: [ ] # Will send notifications if any notification source is enabled. If empty will send notifications for all libraries
   metadataUpdate:
     default:
-      libraryType: "MANGA" # Can be "MANGA", "NOVEL" or "COMIC". Hint to help better match book numbers
+      libraryType: "MANGA" # Can be "MANGA", "NOVEL", "COMIC" or "WEBTOON". Hint to help better match book numbers
       updateModes: [ API ] # can use multiple options at once. available options are API, COMIC_INFO
       aggregate: false # if enabled will search and aggregate metadata from all configured providers
       mergeTags: false # if true and aggregate is enabled will merge tags from all providers
@@ -144,7 +137,7 @@ kavita:
     notificationsLibraryFilter: [ ] # Will send notifications if any notification source is enabled. If empty will send notifications for all libraries
   metadataUpdate:
     default:
-      libraryType: "MANGA" # Can be "MANGA", "NOVEL" or "COMIC". Hint to help better match book numbers
+      libraryType: "MANGA" # Can be "MANGA", "NOVEL", "COMIC" or "WEBTOON". Hint to help better match book numbers
       updateModes: [ API ] # can use multiple options at once. available options are API, COMIC_INFO
       aggregate: false # if enabled will search and aggregate metadata from all configured providers
       mergeTags: false # if true and aggregate is enabled will merge tags from all providers
@@ -180,25 +173,28 @@ database:
 metadataProviders:
   malClientId: "" # required for mal provider. See https://myanimelist.net/forum/?topicid=1973077 env:KOMF_METADATA_PROVIDERS_MAL_CLIENT_ID
   comicVineApiKey: # required for comicVine provider https://comicvine.gamespot.com/api/ env:KOMF_METADATA_PROVIDERS_COMIC_VINE_API_KEY
+  comicVineSearchLimit: # define ComicVine search result Limit, default is 10
+  comicVineIssueName: # string that contains "{number}" which will be replaced by the issue number ie. "Issue #{number}". Used when an issue has no name on ComicVine, default is null
+  comicVineIdFormat: # string that contains "{id}" which will serve to parse the ComicVine volume of a given book from its title or folder name ie. "[cv-{id}]" which will correctly identify '.../Uncanny X-Men Omnibus (2006) [cv-27512]' as being [4050-27512](https://comicvine.gamespot.com/uncanny-x-men-omnibus/4050-27512/)
   bangumiToken: # bangumi provider require a token to show nsfw items https://next.bgm.tv/demo/access-token  env:KOMF_METADATA_PROVIDERS_BANGUMI_TOKEN
   defaultProviders:
     mangaUpdates:
       priority: 10
       enabled: true
-      mediaType: "MANGA" # filter used in matching. Can be NOVEL or MANGA. MANGA type includes everything except novels
+      mediaType: "MANGA" # filter used in matching. Can be NOVEL, MANGA or WEBTOON. MANGA type includes everything except novels
       authorRoles: [ "WRITER" ] # roles that will be mapped to author role
       artistRoles: [ "PENCILLER","INKER","COLORIST","LETTERER","COVER" ] # roles that will be mapped to artist role
     mal:
       priority: 20
       enabled: false
-      mediaType: "MANGA" # filter used in matching. Can be NOVEL or MANGA. MANGA type includes everything except novels
+      mediaType: "MANGA" # filter used in matching. Can be NOVEL, MANGA or WEBTOON. MANGA type includes everything except novels
     nautiljon:
       priority: 30
       enabled: false
     aniList:
       priority: 40
       enabled: false
-      mediaType: "MANGA" # filter used in matching. Can be NOVEL or MANGA. MANGA type includes everything except novels
+      mediaType: "MANGA" # filter used in matching. Can be NOVEL, MANGA or WEBTOON. MANGA type includes everything except novels
       tagsScoreThreshold: 60 # tags with this score or higher will be included
       tagsSizeLimit: 15 # amount of tags that will be included
     yenPress:
@@ -214,7 +210,7 @@ metadataProviders:
     bookWalker:
       priority: 80
       enabled: false
-      mediaType: "MANGA" # filter used in matching. Can be NOVEL or MANGA.
+      mediaType: "MANGA" # filter used in matching. Can be NOVEL, MANGA or WEBTOON.
     mangaDex:
       priority: 90
       enabled: false
@@ -230,6 +226,15 @@ metadataProviders:
     hentag:
       priority: 120
       enabled: false
+    webtoons:
+      priority: 130
+      enabled: false
+    mangaBaka:
+      priority: 140
+      enabled: false
+      # Datasource used for metadata retrieval. DATABASE mode will only work if MangaBaka database is installed
+      # API or DATABASE 
+      mode: API
 
 server:
   port: 8085 # or env:KOMF_SERVER_PORT

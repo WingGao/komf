@@ -7,21 +7,19 @@ import kotlinx.coroutines.sync.withLock
 import org.apache.velocity.Template
 import org.apache.velocity.runtime.RuntimeInstance
 import org.apache.velocity.runtime.resource.loader.ClasspathResourceLoader
+import snd.komf.notifications.NotificationContext
 import snd.komf.notifications.VelocityTemplates.loadTemplateByName
 import snd.komf.notifications.VelocityTemplates.renderTemplate
 import snd.komf.notifications.VelocityTemplates.templateFromString
+import snd.komf.notifications.VelocityTemplates.templateWriteAndGet
 import snd.komf.notifications.VelocityTemplates.toVelocityContext
-import snd.komf.notifications.discord.model.NotificationContext
-import java.nio.file.StandardOpenOption.TRUNCATE_EXISTING
 import java.util.*
 import kotlin.io.path.Path
 import kotlin.io.path.absolutePathString
 import kotlin.io.path.createDirectories
-import kotlin.io.path.createFile
 import kotlin.io.path.exists
 import kotlin.io.path.notExists
 import kotlin.io.path.readText
-import kotlin.io.path.writeBytes
 
 
 data class AppriseRenderResult(
@@ -114,21 +112,16 @@ class AppriseVelocityTemplates(
     suspend fun updateTemplates(templates: AppriseStringTemplates) {
         templateWriteMutex.withLock {
             appriseDirectory.createDirectories()
-            val titleTemplate = templates.titleTemplate?.let {
-                val file = appriseDirectory.resolve(titleFileName)
-                if (file.notExists()) file.createFile()
-                file.writeBytes(it.toByteArray(Charsets.UTF_8), TRUNCATE_EXISTING)
 
-                velocityEngine.templateFromString(it)
-            } ?: velocityEngine.loadTemplateByName(titleFileName)
+            val titleTemplate = velocityEngine.templateWriteAndGet(
+                templates.titleTemplate,
+                appriseDirectory.resolve(titleFileName)
+            ) ?: velocityEngine.loadTemplateByName(titleFileName)
 
-            val bodyTemplate = templates.bodyTemplate?.let {
-                val file = appriseDirectory.resolve(bodyFileName)
-                if (file.notExists()) file.createFile()
-                file.writeBytes(it.toByteArray(Charsets.UTF_8), TRUNCATE_EXISTING)
-
-                velocityEngine.templateFromString(it)
-            } ?: velocityEngine.loadTemplateByName(bodyFileName)
+            val bodyTemplate = velocityEngine.templateWriteAndGet(
+                templates.bodyTemplate,
+                appriseDirectory.resolve(bodyFileName)
+            ) ?: velocityEngine.loadTemplateByName(bodyFileName)
 
             this.titleTemplate.value = titleTemplate
             this.bodyTemplate.value = bodyTemplate

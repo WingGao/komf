@@ -10,7 +10,9 @@ enum class CoreProviders {
     MAL,
     MANGA_UPDATES,
     MANGADEX,
+    MANGA_BAKA,
     NAUTILJON,
+    WEBTOONS,
     YEN_PRESS,
     VIZ,
 }

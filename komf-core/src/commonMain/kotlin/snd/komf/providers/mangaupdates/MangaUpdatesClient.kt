@@ -31,8 +31,8 @@ class MangaUpdatesClient(
                 MangaUpdatesSearchRequest(
                     search = name,
                     page = page,
-                    perPage = perPage,
-                    types = types,
+                    perpage = perPage,
+                    type = types,
                 )
             )
         }.body<SearchResultPage>()
@@ -92,7 +92,7 @@ class MangaUpdatesClient(
     }
 
     private fun parseDescriptionPart(element: Element): String {
-        return if (element.tag().name == "br") "\n"
+        return if (element.tag().name() == "br") "\n"
         else element.text()
     }
 
@@ -105,8 +105,8 @@ class MangaUpdatesClient(
     private data class MangaUpdatesSearchRequest(
         val search: String,
         val page: Int,
-        val perPage: Int,
-        val types: Collection<SeriesType>
+        val perpage: Int,
+        val type: Collection<SeriesType>
     )
 }
 

@@ -10,6 +10,7 @@ import snd.komf.api.config.EventListenerConfigUpdateRequest
 import snd.komf.api.config.KavitaConfigUpdateRequest
 import snd.komf.api.config.KomfConfigUpdateRequest
 import snd.komf.api.config.KomgaConfigUpdateRequest
+import snd.komf.api.config.MangaBakaConfigUpdateRequest
 import snd.komf.api.config.MangaDexConfigUpdateRequest
 import snd.komf.api.config.MetadataPostProcessingConfigUpdateRequest
 import snd.komf.api.config.MetadataProcessingConfigUpdateRequest
@@ -19,18 +20,18 @@ import snd.komf.api.config.ProviderConfigUpdateRequest
 import snd.komf.api.config.ProvidersConfigUpdateRequest
 import snd.komf.api.config.SeriesMetadataConfigUpdateRequest
 import snd.komf.app.config.AppConfig
-import snd.komf.app.config.EventListenerConfig
-import snd.komf.app.config.KavitaConfig
-import snd.komf.app.config.KomgaConfig
-import snd.komf.app.config.MetadataPostProcessingConfig
-import snd.komf.app.config.MetadataProcessingConfig
-import snd.komf.app.config.MetadataUpdateConfig
-import snd.komf.app.config.NotificationsConfig
+import snd.komf.mediaserver.config.EventListenerConfig
+import snd.komf.mediaserver.config.KavitaConfig
+import snd.komf.mediaserver.config.KomgaConfig
+import snd.komf.mediaserver.config.MetadataPostProcessingConfig
+import snd.komf.mediaserver.config.MetadataProcessingConfig
+import snd.komf.mediaserver.config.MetadataUpdateConfig
 import snd.komf.mediaserver.metadata.PublisherTagNameConfig
 import snd.komf.notifications.apprise.AppriseConfig
 import snd.komf.notifications.discord.DiscordConfig
 import snd.komf.providers.AniListConfig
 import snd.komf.providers.BookMetadataConfig
+import snd.komf.providers.MangaBakaConfig
 import snd.komf.providers.MangaDexConfig
 import snd.komf.providers.MetadataProvidersConfig
 import snd.komf.providers.ProviderConfig
@@ -73,6 +74,21 @@ class AppConfigUpdateMapper {
                 PatchValue.None -> null
                 is PatchValue.Some -> apiKey.value
                 PatchValue.Unset -> config.comicVineApiKey
+            },
+            comicVineSearchLimit = when (val limit = patch.comicVineSearchLimit) {
+                PatchValue.None -> null
+                is PatchValue.Some -> limit.value
+                PatchValue.Unset -> config.comicVineSearchLimit
+            },
+            comicVineIssueName = when (val issueName = patch.comicVineIssueName) {
+                PatchValue.None -> null
+                is PatchValue.Some -> issueName.value
+                PatchValue.Unset -> config.comicVineIssueName
+            },
+            comicVineIdFormat = when (val idFormat = patch.comicVineIdFormat) {
+                PatchValue.None -> null
+                is PatchValue.Some -> idFormat.value
+                PatchValue.Unset -> config.comicVineIdFormat
             },
             nameMatchingMode = when (patch.nameMatchingMode.getOrNull()) {
                 KomfNameMatchingMode.EXACT -> NameMatchingMode.EXACT
@@ -137,6 +153,10 @@ class AppConfigUpdateMapper {
                 ?.let { providerConfig(config.comicVine, it) } ?: config.comicVine,
             hentag = patch.hentag.getOrNull()
                 ?.let { providerConfig(config.hentag, it) } ?: config.hentag,
+            mangaBaka = patch.mangaBaka.getOrNull()
+                ?.let { mangaBakaProviderConfig(config.mangaBaka, it) } ?: config.mangaBaka,
+            webtoons = patch.webtoons.getOrNull()
+                ?.let { providerConfig(config.webtoons, it) } ?: config.webtoons,
         )
     }
 
@@ -206,6 +226,25 @@ class AppConfigUpdateMapper {
             },
             coverLanguages = patch.coverLanguages.getOrNull() ?: config.coverLanguages,
             links = patch.links.getOrNull()?.map { MangaDexLink.valueOf(it.name) } ?: config.links
+        )
+    }
+
+    private fun mangaBakaProviderConfig(config: MangaBakaConfig, patch: MangaBakaConfigUpdateRequest): MangaBakaConfig {
+        return config.copy(
+            priority = patch.priority.getOrNull() ?: config.priority,
+            enabled = patch.enabled.getOrNull() ?: config.enabled,
+            mediaType = patch.mediaType.getOrNull()?.toMediaType() ?: config.mediaType,
+            authorRoles = patch.authorRoles.getOrNull()?.map { it.toAuthorRole() } ?: config.authorRoles,
+            artistRoles = patch.artistRoles.getOrNull()?.map { it.toAuthorRole() } ?: config.artistRoles,
+            seriesMetadata = patch.seriesMetadata.getOrNull()
+                ?.let { seriesMetadataConfig(config.seriesMetadata, it) }
+                ?: config.seriesMetadata,
+            nameMatchingMode = when (val mode = patch.nameMatchingMode) {
+                PatchValue.None -> null
+                is PatchValue.Some -> mode.value.toNameMatchingMode()
+                PatchValue.Unset -> config.nameMatchingMode
+            },
+            mode = patch.mode.getOrNull()?.toMangaBakaMode() ?: config.mode
         )
     }
 

@@ -17,10 +17,14 @@ import snd.komf.util.NameSimilarityMatcher.NameMatchingMode
 data class MetadataProvidersConfig(
     val malClientId: String? = null,
     val comicVineApiKey: String? = null,
+    val comicVineSearchLimit: Int? = null,
+    val comicVineIssueName: String? = null,
+    val comicVineIdFormat: String? = null,
     val bangumiToken: String? = null,
     val nameMatchingMode: NameMatchingMode = NameMatchingMode.CLOSEST_MATCH,
     val defaultProviders: ProvidersConfig = ProvidersConfig(),
     val libraryProviders: Map<String, ProvidersConfig> = emptyMap(),
+    val mangabakaDatabaseDir: String = "./mangabaka",
 )
 
 @Serializable
@@ -37,6 +41,8 @@ data class ProvidersConfig(
     val bangumi: ProviderConfig = ProviderConfig(),
     val comicVine: ProviderConfig = ProviderConfig(),
     val hentag: ProviderConfig = ProviderConfig(),
+    val mangaBaka: MangaBakaConfig = MangaBakaConfig(),
+    val webtoons: ProviderConfig = ProviderConfig(),
 )
 
 @Serializable
@@ -51,6 +57,25 @@ data class ProviderConfig(
     val authorRoles: Collection<AuthorRole> = listOf(WRITER),
     val artistRoles: Collection<AuthorRole> = listOf(PENCILLER, INKER, COLORIST, LETTERER, COVER),
 )
+
+@Serializable
+data class MangaBakaConfig(
+    val priority: Int = 10,
+    val enabled: Boolean = false,
+    val seriesMetadata: SeriesMetadataConfig = SeriesMetadataConfig(),
+    val nameMatchingMode: NameMatchingMode? = null,
+    val mediaType: MediaType = MANGA,
+
+    val authorRoles: Collection<AuthorRole> = listOf(WRITER),
+    val artistRoles: Collection<AuthorRole> = listOf(PENCILLER, INKER, COLORIST, LETTERER, COVER),
+
+    val mode: MangaBakaMode = MangaBakaMode.API,
+)
+
+@Serializable
+enum class MangaBakaMode {
+    API, DATABASE
+}
 
 @Serializable
 data class AniListConfig(

@@ -2,7 +2,6 @@ import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
-    alias(libs.plugins.androidLibrary)
     alias(libs.plugins.kotlinAtomicfu)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.kotlinSerialization)
@@ -19,23 +18,19 @@ kotlin {
             jvmTarget.set(JvmTarget.JVM_17)
         }
     }
-    androidTarget {
-        @OptIn(ExperimentalKotlinGradlePluginApi::class)
-        compilerOptions {
-            jvmTarget.set(JvmTarget.JVM_17)
-        }
-    }
-
-//    @OptIn(ExperimentalWasmDsl::class)
-//    wasmJs {
-//        moduleName = "komf-core"
-//    }
 
     sourceSets {
+        all {
+            languageSettings.optIn("kotlin.time.ExperimentalTime")
+        }
         commonMain.dependencies {
             implementation(libs.cache4k)
             implementation(libs.commons.compress)
             implementation(libs.commons.text)
+            api(libs.exposed.core)
+            implementation(libs.exposed.jdbc)
+            implementation(libs.exposed.json)
+            implementation(libs.exposed.kotlin.datetime)
             implementation(libs.kotlin.logging)
             implementation(libs.kotlinx.coroutines.core)
             implementation(libs.kotlinx.datetime)
@@ -46,32 +41,17 @@ kotlin {
             implementation(libs.ktor.client.encoding)
             implementation(libs.ktor.serialization.kotlinx.json)
             implementation(libs.ksoup)
+            implementation(libs.sqlite.jdbc)
             implementation(libs.xmlutil.core)
             implementation(libs.xmlutil.serialization)
 
-        }
 
-        val jvmMain by getting
-        jvmMain.dependencies {
             implementation(libs.twelvemonkeys.imageio.core)
             implementation(libs.twelvemonkeys.imageio.jpeg)
             implementation(libs.twelvemonkeys.imageio.webp)
-
+        }
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
     }
-
-}
-
-android {
-    namespace = "snd.komf"
-    compileSdk = 35
-
-    defaultConfig {
-        minSdk = 26
-    }
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
 }

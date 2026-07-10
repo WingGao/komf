@@ -43,14 +43,14 @@ import snd.komf.model.SeriesBook
 import snd.komf.model.SeriesSearchResult
 import snd.komf.providers.CoreProviders
 import snd.komf.providers.MetadataProvider
-import snd.komf.providers.ProviderFactory
+import snd.komf.providers.ProvidersModule
 import snd.komf.util.BookNameParser
 
 private val logger = KotlinLogging.logger {}
 
 class MetadataService(
     private val mediaServerClient: MediaServerClient,
-    private val metadataProviders: ProviderFactory.MetadataProviders,
+    private val metadataProviders: ProvidersModule.MetadataProviders,
     private val aggregateMetadata: Boolean,
     private val metadataMerger: MetadataMerger,
     private val metadataUpdateService: MetadataUpdater,
@@ -311,6 +311,8 @@ class MetadataService(
         return when (libraryType) {
             MediaType.MANGA -> BookNameParser.getVolumes(bookName)
             MediaType.NOVEL, MediaType.COMIC -> BookNameParser.getBookNumber(bookName)
+            MediaType.WEBTOON -> BookNameParser.getChapters(bookName)
+                ?: BookNameParser.getBookNumber(bookName)
         }
     }
 
@@ -379,7 +381,7 @@ class MetadataService(
         val cover = mediaServerClient.getBookThumbnail(firstBook.id)
         val releaseYear = series.metadata.releaseYear?.let { if (it == 0) null else it }
 
-        return MatchQuery(searchTitle, releaseYear, BookQualifier(firstBook.name, range, cover))
+        return MatchQuery(searchTitle, releaseYear, BookQualifier(firstBook.name, range, cover), series.url)
     }
 
     private suspend fun getSeriesMetadata(

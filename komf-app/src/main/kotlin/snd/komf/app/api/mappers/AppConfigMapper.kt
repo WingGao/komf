@@ -1,5 +1,6 @@
 package snd.komf.app.api.mappers
 
+import snd.komf.api.MangaBakaMode
 import snd.komf.api.MangaDexLink
 import snd.komf.api.config.AniListConfigDto
 import snd.komf.api.config.AppriseConfigDto
@@ -9,6 +10,8 @@ import snd.komf.api.config.EventListenerConfigDto
 import snd.komf.api.config.KavitaConfigDto
 import snd.komf.api.config.KomfConfig
 import snd.komf.api.config.KomgaConfigDto
+import snd.komf.api.config.MangaBakaConfigDto
+import snd.komf.api.config.MangaBakaDatabaseDto
 import snd.komf.api.config.MangaDexConfigDto
 import snd.komf.api.config.MetadataPostProcessingConfigDto
 import snd.komf.api.config.MetadataProcessingConfigDto
@@ -20,29 +23,34 @@ import snd.komf.api.config.ProvidersConfigDto
 import snd.komf.api.config.PublisherTagNameConfigDto
 import snd.komf.api.config.SeriesMetadataConfigDto
 import snd.komf.app.config.AppConfig
-import snd.komf.app.config.EventListenerConfig
-import snd.komf.app.config.KavitaConfig
-import snd.komf.app.config.KomgaConfig
-import snd.komf.app.config.MetadataPostProcessingConfig
-import snd.komf.app.config.MetadataProcessingConfig
-import snd.komf.app.config.MetadataUpdateConfig
-import snd.komf.app.config.NotificationsConfig
+import snd.komf.mediaserver.config.EventListenerConfig
+import snd.komf.mediaserver.config.KavitaConfig
+import snd.komf.mediaserver.config.KomgaConfig
+import snd.komf.mediaserver.config.MetadataPostProcessingConfig
+import snd.komf.mediaserver.config.MetadataProcessingConfig
+import snd.komf.mediaserver.config.MetadataUpdateConfig
+import snd.komf.notifications.NotificationsConfig
 import snd.komf.notifications.apprise.AppriseConfig
 import snd.komf.notifications.discord.DiscordConfig
 import snd.komf.providers.AniListConfig
 import snd.komf.providers.BookMetadataConfig
+import snd.komf.providers.MangaBakaConfig
 import snd.komf.providers.MangaDexConfig
 import snd.komf.providers.MetadataProvidersConfig
 import snd.komf.providers.ProviderConfig
 import snd.komf.providers.ProvidersConfig
 import snd.komf.providers.SeriesMetadataConfig
+import snd.komf.providers.mangabaka.db.MangaBakaDbMetadata
 
 class AppConfigMapper {
     private val maskedPlaceholder = "********"
 
-    fun toDto(config: AppConfig): KomfConfig {
+    fun toDto(
+        config: AppConfig,
+        mangaBakaDbMetadata: MangaBakaDbMetadata
+    ): KomfConfig {
         return KomfConfig(
-            metadataProviders = toDto(config.metadataProviders),
+            metadataProviders = toDto(config.metadataProviders, mangaBakaDbMetadata),
             komga = toDto(config.komga),
             kavita = toDto(config.kavita),
             notifications = toDto(config.notifications),
@@ -113,7 +121,10 @@ class AppConfigMapper {
         )
     }
 
-    private fun toDto(config: MetadataProvidersConfig): MetadataProvidersConfigDto {
+    private fun toDto(
+        config: MetadataProvidersConfig,
+        mangaBakaDbMetadata: MangaBakaDbMetadata
+    ): MetadataProvidersConfigDto {
         val malClientId = config.malClientId?.let { clientId ->
             if (clientId.length < 32) maskedPlaceholder
             else clientId.replace("(?<=.{4}).".toRegex(), "*")
@@ -127,11 +138,25 @@ class AppConfigMapper {
         return MetadataProvidersConfigDto(
             malClientId = malClientId,
             comicVineClientId = comicVineClientId,
+            comicVineSearchLimit = config.comicVineSearchLimit,
+            comicVineIssueName = config.comicVineIssueName,
+            comicVineIdFormat = config.comicVineIdFormat,
             nameMatchingMode = config.nameMatchingMode.fromNameMatchingMode(),
             defaultProviders = toDto(config.defaultProviders),
             libraryProviders = config.libraryProviders
                 .map { (libraryId, config) -> libraryId to toDto(config) }
-                .toMap()
+                .toMap(),
+            mangaBakaDatabase = toDto(mangaBakaDbMetadata),
+        )
+    }
+
+    fun toDto(metadata: MangaBakaDbMetadata): MangaBakaDatabaseDto? {
+        val timestamp = metadata.timestamp
+        val checksum = metadata.checksum
+        return if (timestamp == null || checksum == null) null
+        else MangaBakaDatabaseDto(
+            downloadTimestamp = timestamp,
+            checksum = checksum
         )
     }
 
@@ -149,6 +174,8 @@ class AppConfigMapper {
             bangumi = toDto(config.bangumi),
             comicVine = toDto(config.comicVine),
             hentag = toDto(config.hentag),
+            mangaBaka = toDto(config.mangaBaka),
+            webtoons = toDto(config.webtoons),
         )
     }
 
@@ -194,6 +221,19 @@ class AppConfigMapper {
             artistRoles = config.artistRoles.map { it.fromAuthorRole() },
             coverLanguages = config.coverLanguages,
             links = config.links.map { MangaDexLink.valueOf(it.name) }
+        )
+    }
+
+    private fun toDto(config: MangaBakaConfig): MangaBakaConfigDto {
+        return MangaBakaConfigDto(
+            nameMatchingMode = config.nameMatchingMode?.fromNameMatchingMode(),
+            priority = config.priority,
+            enabled = config.enabled,
+            mediaType = config.mediaType.fromMediaType(),
+            authorRoles = config.authorRoles.map { it.fromAuthorRole() },
+            artistRoles = config.artistRoles.map { it.fromAuthorRole() },
+            seriesMetadata = toDto(config.seriesMetadata),
+            mode = MangaBakaMode.valueOf(config.mode.name)
         )
     }
 

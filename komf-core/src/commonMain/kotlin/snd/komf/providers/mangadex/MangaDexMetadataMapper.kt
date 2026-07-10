@@ -42,6 +42,7 @@ import snd.komf.providers.mangadex.model.MangaDexLink.NOVEL_UPDATES
 import snd.komf.providers.mangadex.model.MangaDexLink.RAW
 import snd.komf.providers.mangadex.model.MangaDexManga
 import snd.komf.providers.mangadex.model.MangaDexMangaId
+import snd.komf.util.toStingEncoded
 
 class MangaDexMetadataMapper(
     private val seriesMetadataConfig: SeriesMetadataConfig,
@@ -80,12 +81,63 @@ class MangaDexMetadataMapper(
                     .mapNotNull { it.attributes.name["en"] ?: it.attributes.name.values.firstOrNull() }
 
         val originalLang = manga.attributes.originalLanguage
-        val titles = manga.attributes.altTitles
+        val originalRomaji = "${manga.attributes.originalLanguage}-ro"
+        // search altTitles for given key
+        var originalRomajiFound = false
+        val titleLang = manga.attributes.title.keys.first()
+        var titleLangDuped = false
+
+        // also check altTitles for native that's wrongly marked as "en"
+        var incorrectAltTitle : Map<String, String>? = null
+        for (altTitle in manga.attributes.altTitles) {
+            if (altTitle.keys.contains(originalRomaji)) {
+                originalRomajiFound = true
+            }
+
+            if (altTitle.keys.contains(titleLang)) {
+                titleLangDuped = true
+            }
+
+            if (altTitle.keys.contains("en")) {
+                altTitle["en"]?.let {
+                    val detectedLanguages = LanguageCharType.detect(it)
+                    if ((detectedLanguages.size == 1) && (detectedLanguages.contains(originalLang))) {
+                        incorrectAltTitle = altTitle
+                    }
+                }
+            }
+        }
+
+        var title = manga.attributes.title
+        if (titleLangDuped && (originalLang == "ja")) {
+            // if original romaji was not found in altTitle and title lang is duped, assume
+            // title is original
+            // romaji irrespective of what its language indicator says.
+            if (!originalRomajiFound) {
+                val name = title[titleLang]
+                name?.let { title = mapOf(originalRomaji to it) }
+            }
+        }
+
+        // combine title and altTitle into 1 list.
+        val titleList = buildList {
+            add(title)
+            manga.attributes.altTitles.forEach {
+                if ((incorrectAltTitle != null) && (it == incorrectAltTitle)) {
+                    // We know incorrectAltTitle["en"] isn't null here because we checked it above.
+                    add(mapOf(originalLang to incorrectAltTitle["en"]!!))
+                } else {
+                    add(it)
+                }
+            }
+        }
+
+        val titles = titleList
             .map { it.entries.first() }
             .map { (lang, name) ->
                 when (lang) {
                     originalLang -> SeriesTitle(name, NATIVE, lang)
-                    "ja-ro" -> SeriesTitle(name, ROMAJI, lang)
+                    "ja-ro", "ko-ro", "zh-ro" -> SeriesTitle(name, ROMAJI, lang)
                     else -> SeriesTitle(name, LOCALIZED, lang)
                 }
             }
@@ -101,7 +153,7 @@ class MangaDexMetadataMapper(
                     WebLink("Anime-Planet", "https://www.anime-planet.com/manga/${value.encodeURLPath()}")
 
                 "bw" -> parseUrl("https://bookwalker.jp/$value")?.let { url ->
-                    links[BOOKWALKER_JP] = WebLink("BookWalkerJp", url.toString())
+                    links[BOOKWALKER_JP] = WebLink("BookWalkerJp", url.toStingEncoded())
                 }
 
                 "mu" -> {
@@ -117,7 +169,7 @@ class MangaDexMetadataMapper(
                 )
 
                 "kt" -> links[KITSU] = WebLink("Kitsu", "https://kitsu.app/manga/${value.encodeURLPath()}")
-                "amz" -> parseUrl(value)?.let { url -> links[AMAZON] = WebLink("Amazon", url.toString()) }
+                "amz" -> parseUrl(value)?.let { url -> links[AMAZON] = WebLink("Amazon", url.toStingEncoded()) }
                 "ebj" -> {
                     val url = if (value.toIntOrNull() != null) {
                         "https://ebookjapan.yahoo.co.jp/books/${value}}"
@@ -130,10 +182,10 @@ class MangaDexMetadataMapper(
                 "mal" -> links[MY_ANIME_LIST] =
                     WebLink("MyAnimeList", "https://myanimelist.net/manga/${value.encodeURLPath()}")
 
-                "cdj" -> parseUrl(value)?.let { url -> links[CD_JAPAN] = WebLink("CDJapan", url.toString()) }
-                "raw" -> parseUrl(value)?.let { url -> links[RAW] = WebLink("Official Raw", url.toString()) }
+                "cdj" -> parseUrl(value)?.let { url -> links[CD_JAPAN] = WebLink("CDJapan", url.toStingEncoded()) }
+                "raw" -> parseUrl(value)?.let { url -> links[RAW] = WebLink("Official Raw", url.toStingEncoded()) }
                 "engtl" -> parseUrl(value)?.let { url ->
-                    links[ENGLISH_TL] = WebLink("Official English", url.toString())
+                    links[ENGLISH_TL] = WebLink("Official English", url.toStingEncoded())
                 }
             }
         }
